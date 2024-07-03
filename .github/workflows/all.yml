@@ -106,7 +106,7 @@ jobs:
       - name: Get build scripts
         uses: actions/checkout@v4
         with:
-          repository: starg2/mingw-builds
+          repository: bitsavers/mingw-builds
           ref: custom
           path: mingw-builds
 
