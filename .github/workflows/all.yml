@@ -16,7 +16,7 @@ on:
         description: 'arch'
         required: true
         type: string
-        default: '["i686", "x86_64"]'
+        default: '["x86_64", "i686"]'
       threading:
         description: 'threading'
         required: true
@@ -31,9 +31,9 @@ on:
         description: 'crt'
         required: true
         type: string
-        default: '["msvcrt", "ucrt"]'
-      tagname:
-        description: 'tagname'
+        default: '["ucrt", "msvcrt"]'
+      releasever:
+        description: 'release version, e.g. 2024-07-07'
         required: false
         type: string
 
@@ -106,7 +106,7 @@ jobs:
       - name: Get build scripts
         uses: actions/checkout@v4
         with:
-          repository: starg2/mingw-builds
+          repository: bitsavers/mingw-builds
           ref: custom
           path: mingw-builds
 
@@ -153,7 +153,7 @@ jobs:
           path: C:/build/${{ matrix.mode }}/archives/*.7z
 
   release:
-    if: ${{ github.event.inputs.tagname != '' }}
+    if: ${{ github.event.inputs.releasever != '' }}
     needs: build
 
     runs-on: windows-latest
@@ -170,8 +170,25 @@ jobs:
       - name: Zip artifacts
         run: ls -Directory | % { 7z a ($_.Name + '.zip') ($_.Name + '\*') -mx0 }
 
-      - uses: softprops/action-gh-release@v2
+      # - uses: softprops/action-gh-release@v2
+      #   with:
+      #     tag_name: ${{ github.event.inputs.releasever }}
+      #     files: '*.zip'
+      #     draft: true
+
+      - name: Upcase modes name
+        shell: bash
+        run: |
+          echo "MODES_UPPER_CASE=${${{ github.event.inputs.modes }}@U}" >> $GITHUB_ENV
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
         with:
-          tag_name: ${{ github.event.inputs.tagname }}
-          files: '*.zip'
-          draft: true
+          repo_token: ${{ github.token }}
+          file: '*.zip'
+          tag: v${{ github.event.inputs.releasever }}
+          file_glob: true
+          release_name: '${MODES_UPPER_CASE} (${{ github.event.inputs.releasever }})'
+          overwrite: true
+          prerelease: true
+          body: ''
